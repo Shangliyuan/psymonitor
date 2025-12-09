@@ -105,8 +105,10 @@ cvPSYwmboot <- function(y, swindow0, IC=0, adflag=0, Tb, nboot=199,
   # The PSY Test ------------------------------------------------------------
 
   # setup parallel backend to use many processors
-  if (useParallel == TRUE && missing(nCores)) {
-    nCores <- detectCores() - 1
+  if (useParallel == TRUE) {
+    if (missing(nCores)) {
+      nCores <- detectCores() - 1
+    }
   } else {
     nCores <- 1
   }
