@@ -69,8 +69,10 @@ cvPSYmc <- function(obs, swindow0, IC=0, adflag=0, nrep=199,
   y <- apply(z, 2, cumsum)
 
   # setup parallel backend
-  if (useParallel == TRUE && missing(nCores)) {
-    nCores <- detectCores() - 1
+  if (useParallel == TRUE) {
+    if (missing(nCores)) {
+      nCores <- detectCores() - 1
+    }
   } else {
     nCores <- 1
   }
