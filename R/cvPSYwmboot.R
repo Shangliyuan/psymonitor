@@ -103,15 +103,15 @@ cvPSYwmboot <- function(y, swindow0, IC=0, adflag=0, Tb, nboot=199,
 
 
   # The PSY Test ------------------------------------------------------------
-
-  # setup parallel backend to use many processors
   if (useParallel == TRUE) {
-    if (missing(nCores)) {
-      nCores <- detectCores() - 1
-    }
+      if (missing(nCores)) {
+          nCores <- detectCores() - 1
+      }
+           # 如果 nCores 已提供，则使用提供的值（不需要额外操作）
   } else {
-    nCores <- 1
+           nCores <- 1
   }
+
   cl <- makeCluster(nCores)
   registerDoParallel(cl)
 
@@ -119,7 +119,7 @@ cvPSYwmboot <- function(y, swindow0, IC=0, adflag=0, Tb, nboot=199,
   dim  <- Tb - swindow0 + 1
   i <- 0
   MPSY <- foreach(i = 1:nboot, .inorder = FALSE, .combine = rbind) %dopar% {
-    PSY(yb[, i], swindow0, IC, adflag)
+    PSY(yb[, i], swindow0, IC, adflag, useParallel=FALSE)
   }
   #----------------------------------
   stopCluster(cl)
@@ -128,3 +128,4 @@ cvPSYwmboot <- function(y, swindow0, IC=0, adflag=0, Tb, nboot=199,
   Q_SPSY <- as.matrix(quantile(SPSY, qe))
   return(Q_SPSY)
 }
+
