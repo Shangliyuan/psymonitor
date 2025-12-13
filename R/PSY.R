@@ -30,7 +30,8 @@
 #'
 
 
-PSY <- function(y, swindow0, IC=0, adflag=0) {
+PSY <- function(y, swindow0, IC = 0, adflag = 0,
+                useParallel = TRUE, nCores) {
 
   t <- length(y)
 
@@ -38,18 +39,39 @@ PSY <- function(y, swindow0, IC=0, adflag=0) {
     swindow0 <- floor(t * (0.01 + 1.8 / sqrt(t)))
   }
 
-  bsadfs <- matrix(data = NA, nrow = t, ncol = 1)
+  r2_seq <- swindow0:t
 
-  for (r2 in swindow0:t) {
-    rwadft <- matrix(data = -999, nrow = r2 - swindow0 + 1, ncol = 1)
-    for (r1 in 1:(r2 - swindow0 + 1)) {
-      rwadft[r1] <- as.numeric(ADF(y[r1:r2], IC, adflag)) # two tail 5% significant level
+  if (useParallel) {
+    # Set up parallel backend only when needed
+    if (missing(nCores)) {
+      nCores <- parallel::detectCores() - 1
+    }
+    nCores <- max(1L, nCores)  # ensure at least 1 core
+
+    cl <- parallel::makeCluster(nCores)
+    doParallel::registerDoParallel(cl)
+
+    bsadf <- foreach::foreach(r2 = r2_seq, .combine = c) %dopar% {
+      rwadft <- numeric(r2 - swindow0 + 1)
+      for (r1 in 1:(r2 - swindow0 + 1)) {
+        rwadft[r1] <- as.numeric(ADF(y[r1:r2], IC, adflag))
+      }
+      max(rwadft)
     }
 
-    bsadfs[r2, 1] <- max(unlist(rwadft))
-  }
+    parallel::stopCluster(cl)  # Properly shut down cluster
 
-  bsadf <- bsadfs[swindow0:t]
+  } else {
+    # Sequential execution: no cluster, no extra ports
+    bsadf <- foreach::foreach(r2 = r2_seq, .combine = c) %do% {
+      rwadft <- numeric(r2 - swindow0 + 1)
+      for (r1 in 1:(r2 - swindow0 + 1)) {
+        rwadft[r1] <- as.numeric(ADF(y[r1:r2], IC, adflag))
+      }
+      max(rwadft)
+    }
+  }
 
   return(bsadf)
 }
+
