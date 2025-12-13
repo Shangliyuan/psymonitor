@@ -70,25 +70,27 @@ cvPSYmc <- function(obs, swindow0, IC=0, adflag=0, nrep=199,
 
   # setup parallel backend
   if (useParallel == TRUE) {
-    if (missing(nCores)) {
-      nCores <- detectCores() - 1
-    }
+      if (missing(nCores)) {
+          nCores <- detectCores() - 1
+      }
+           # 如果 nCores 已提供，则使用提供的值（不需要额外操作）
   } else {
-    nCores <- 1
+           nCores <- 1
   }
+
   cl <- makeCluster(nCores)
   registerDoParallel(cl)
 
   #----------------------------------
   i <- 0
   MPSY <- foreach(i = 1:nrep, .inorder = FALSE, .combine = rbind) %dopar% {
-    PSY(y[, i], swindow0, IC, adflag)
+    PSY(y[, i], swindow0, IC, adflag, useParallel=FALSE)
   }
   #----------------------------------
 
   stopCluster(cl)
-
-  Q_PSY <- as.matrix(quantile(MPSY, qe), na.rm = TRUE)
+  Q_PSY <- apply(MPSY, 2, quantile, probs = c(0.90, 0.95, 0.99), na.rm = TRUE)
+#  Q_PSY <- as.matrix(quantile(MPSY, qe), na.rm = TRUE)
 
 
   return(Q_PSY)
